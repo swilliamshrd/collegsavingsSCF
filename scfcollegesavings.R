@@ -1,7 +1,7 @@
 #### Set up the file ####
       
       #set working directory
-      setwd( "I:/User/Williams/Publications/529Data/rstuff/collegsavingsSCF" )
+      setwd( "I:/User/Williams/Publications/529Data/rstuff/" )
 
       #Load external packages
       library(mitools)	# allows analysis of multiply-imputed survey data
@@ -150,6 +150,7 @@
             
             temp <- get(implicate)
             
+            # sum the value of all education savings (account type 2) or 529 plans (account type 3)
             temp <- mutate(temp, acct.1.edu = ifelse(acct.1.type == 3 | acct.1.type == 2, acct.1.balance, 0)) %>%
                   mutate(acct.2.edu = ifelse(acct.2.type == 3 | acct.2.type == 2, acct.2.balance, 0)) %>%
                   mutate(acct.3.edu = ifelse(acct.3.type == 3 | acct.3.type == 2, acct.3.balance, 0)) %>%
@@ -157,6 +158,9 @@
                   mutate(acct.5.edu = ifelse(acct.5.type == 3 | acct.5.type == 2, acct.5.balance, 0)) %>%
                   mutate(acct.6.edu = ifelse(acct.6.type == 3 | acct.6.type == 2, acct.6.balance, 0)) %>%
                   mutate(edu_savings = acct.1.edu + acct.2.edu + acct.3.edu + acct.4.edu + acct.5.edu + acct.6.edu)
+      
+            #multply assets by 5 to get proper weighting given the multiple imputation structure
+            temp$edu_savings <- temp$edu_savings*5
             
             assign(implicate, temp)
             
@@ -377,5 +381,5 @@
       group.income.stats
       
       #write to CSV
-      write.csv(group.income.stats,file = "SCFCollegeSavingsResults.csv")
+      write.csv(group.income.stats,file = "I:/User/Williams/Publications/529Data/rstuff/collegsavingsSCF/SCFCollegeSavingsResults.csv")
       
