@@ -160,7 +160,7 @@
                   mutate(edu_savings = acct.1.edu + acct.2.edu + acct.3.edu + acct.4.edu + acct.5.edu + acct.6.edu)
       
             #multply assets by 5 to get proper weighting given the multiple imputation structure
-            temp$edu_savings <- temp$edu_savings*5
+            temp$edu_savings_five <- temp$edu_savings*5
             
             assign(implicate, temp)
             
@@ -313,7 +313,7 @@
 ##### calculate total education savings by income group ####
       
       #calculate using damico's script
-      total.edu.savings <- scf.MIcombine( with( scf.design , svyby( ~edu_savings , ~inc.group , svytotal ) ) )
+      total.edu.savings <- scf.MIcombine( with( scf.design , svyby( ~edu_savings_five , ~inc.group , svytotal ) ) )
       
       #add to table 
       group.income.stats[c("total.edu.savings")] <- c(coef(total.edu.savings))
@@ -346,7 +346,7 @@
             coef(mean_income), # mean.income
             coef(scf.MIcombine( with( scf.design , svymean( ~edu_savings ) ) ) ), # mean educational savings
             SE(scf.MIcombine( with( scf.design , svymean( ~edu_savings ) ) ) ),
-            coef(scf.MIcombine( with( scf.design , svytotal( ~edu_savings ) ) ) ), #total educational savings
+            coef(scf.MIcombine( with( scf.design , svytotal( ~edu_savings_five ) ) ) ), #total educational savings
             coef(scf.MIcombine( with( scf.design , svytotal( ~five ) ) ) ), #total households
             coef(scf.MIcombine( with( scf.design , svytotal( ~has.edu ) ) ) ), #households with edu savings
             0, #share of edu savings, placeholder value
