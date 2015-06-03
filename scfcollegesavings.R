@@ -1,7 +1,7 @@
 #### Set up the file ####
       
       #set working directory
-      setwd( "I:/User/Williams/Publications/529Data/rstuff" )
+      setwd( "I:/User/Williams/Publications/529Data/rstuff/collegsavingsSCF" )
 
       #Load external packages
       library(mitools)	# allows analysis of multiply-imputed survey data
@@ -23,7 +23,7 @@
       #create variable with list of implicates
       implicates <- c("imp1","imp2","imp3","imp4","imp5")
       
-#### Delete unneeded variables ####
+#### Delete unneeded variables, set up data set ####
       
       #list of variables to keep.
       vars.to.keep <- c( 'y1' , 'yy1' , 'wgt' , 'one' , 'networth', 'income', 'five',
@@ -37,7 +37,7 @@
       imp4 <- imp4[ , vars.to.keep ]
       imp5 <- imp5[ , vars.to.keep ]
       
-      #rename coded variables
+      #rename numbered variables from SCF codebook
       for (implicate in implicates) {
             
             temp <- get(implicate)
@@ -66,42 +66,11 @@
             remove(temp)
       }
       
-      # clear up RAM
-      gc()
-
-#### Double check everything lines up with FRB data ####
-
-      #generate mean income for whole sample (compare to FRB numbers--should equal 86.6k)
-      meanincomes <- mean(
-            c(
-                  weighted.mean( imp1$income , imp1$wgt ) ,
-                  weighted.mean( imp2$income , imp2$wgt ) ,
-                  weighted.mean( imp3$income , imp3$wgt ) ,
-                  weighted.mean( imp4$income , imp4$wgt ) ,
-                  weighted.mean( imp5$income , imp5$wgt )
-            )
-      )
-      meanincomes # <- should equal 86.6k
       
-      #generate median income for whole sample (compare to FRB numbers--should equal 46.7k)
-      medianincomes <- mean(
-            c(
-                  wtd.quantile( imp1$income , imp1$wgt , 0.5 ) ,
-                  wtd.quantile( imp2$income , imp2$wgt , 0.5 ) ,
-                  wtd.quantile( imp3$income , imp3$wgt , 0.5 ) ,
-                  wtd.quantile( imp4$income , imp4$wgt , 0.5 ) ,
-                  wtd.quantile( imp5$income , imp5$wgt , 0.5 )            
-            )
-      )
-      
-      medianincomes # <- should equal 46.7k
-      
-      #### Try running it using anthony damico's code #### 
-      
-      # # construct an imputed replicate-weighted survey design object
-      # # build a new replicate-weighted survey design object,
-      # # but unlike most replicate-weighted designs, this object includes the
-      # # five multiply-imputed data tables - imp1 through imp5
+      # construct an imputed replicate-weighted survey design object
+      # build a new replicate-weighted survey design object,
+      # but unlike most replicate-weighted designs, this object includes the
+      # five multiply-imputed data tables - imp1 through imp5
       scf.design <- 
             svrepdesign( 
                   
@@ -127,19 +96,21 @@
                   combined.weights = TRUE
             )
       
-      # Check mean income
-      ( mean_income <- scf.MIcombine( with( scf.design , svymean( ~income ) ) ) )  # <- should equal 86.6k
-      
-      # Check median income 
-      ( median_income <- scf.MIcombine( with( scf.design , svyquantile( ~income, quantiles = .5)))) # <- should equal 46.7k
+      # clear up RAM
+      gc()
       
 #### Group each record in to an income quantile ####   
 
       #calculate income quantiles
       for (quantile in c(.2,.4,.6,.8,.9)) {
+            
+            # calculate income from each quantile
             temp <- scf.MIcombine( with( scf.design , svyquantile( ~income, quantiles = quantile)))
+            
+            # tore the value of the quantile
             temp <- coef(temp)
             
+            # create quantile table, add values
             if (!exists("quantile_table")) {
                   quantile_table <- data.frame(quantile = c(quantile), income = temp)
             } else {
@@ -198,7 +169,8 @@
             assign(implicate,temp)
       }
       
-      # recreate scf.design variable but include the edu_savings numbers.
+      
+      # recreate the scf design object with newly coded variables
       scf.design <- 
             svrepdesign( 
                   
@@ -222,13 +194,48 @@
                   type = "other" ,
                   
                   combined.weights = TRUE
-            )
+            ) 
       
 ##########################################
 ## Analysis is below; above is cleaning ##
 ##########################################            
-     
-# Get mean incomes for income group
+      
+#### Double check everything lines up with FRB data ####
+      
+      #generate mean income for whole sample (compare to FRB numbers--should equal 86.6k)
+      meanincomes <- mean(
+            c(
+                  weighted.mean( imp1$income , imp1$wgt ) ,
+                  weighted.mean( imp2$income , imp2$wgt ) ,
+                  weighted.mean( imp3$income , imp3$wgt ) ,
+                  weighted.mean( imp4$income , imp4$wgt ) ,
+                  weighted.mean( imp5$income , imp5$wgt )
+            )
+      )
+      meanincomes # <- should equal 86.6k
+      
+      #generate median income for whole sample (compare to FRB numbers--should equal 46.7k)
+      medianincomes <- mean(
+            c(
+                  wtd.quantile( imp1$income , imp1$wgt , 0.5 ) ,
+                  wtd.quantile( imp2$income , imp2$wgt , 0.5 ) ,
+                  wtd.quantile( imp3$income , imp3$wgt , 0.5 ) ,
+                  wtd.quantile( imp4$income , imp4$wgt , 0.5 ) ,
+                  wtd.quantile( imp5$income , imp5$wgt , 0.5 )            
+            )
+      )
+      
+      medianincomes # <- should equal 46.7k
+      
+      #### Try running it using anthony damico's code #### 
+      
+      # Check mean income
+      ( mean_income <- scf.MIcombine( with( scf.design , svymean( ~income ) ) ) )  # <- should equal 86.6k
+      
+      # Check median income 
+      ( median_income <- scf.MIcombine( with( scf.design , svyquantile( ~income, quantiles = .5)))) # <- should equal 46.7k  
+      
+#### Get mean incomes for income group ####
             
       #create data frame for results
       group.income.stats <- data.frame(group = c(1:6))
@@ -263,7 +270,7 @@
             
       }
 
-#calculate mean education savings by income group
+##### calculate mean education savings by income group ####
 
       #create data frame to store results.
       mean_savings <- data.frame(income_group = c(1:6), 
@@ -299,7 +306,7 @@
       group.income.stats[c("mean.edu.savings", "mean.savings.se")] <- c(coef(mean_savings_2), SE(mean_savings_2))
       
       
-#calculate total education savings by income group
+##### calculate total education savings by income group ####
       
       #calculate using damico's script
       total.edu.savings <- scf.MIcombine( with( scf.design , svyby( ~edu_savings , ~inc.group , svytotal ) ) )
@@ -308,7 +315,7 @@
       group.income.stats[c("total.edu.savings")] <- c(coef(total.edu.savings))
 
 
-#calculate number of households with assets
+##### Calculate number of households with assets ####
 
       
       #create variable for "total households"
@@ -319,12 +326,56 @@
       hh.with.edu.sav <- scf.MIcombine( with( scf.design , svyby( ~has.edu , ~inc.group , svytotal ) ) )
       group.income.stats$hh.with.edu <- coef(hh.with.edu.sav)
       
-#calculate percentages
+#### calculate percentages ####
       
       #calculate share of total savings
       group.income.stats[c("share.of.edu.savings")] <- c(group.income.stats$total.edu.savings)/sum(group.income.stats$total.edu.savings)
       
       #calculate percent with a savings acct.
-      group.income.stats[c("percent.with.edu.savings")] <- c(group.income.stats$hh.with.edu)/sum(group.income.stats$total.households)
+      group.income.stats[c("percent.with.edu.savings")] <- c(group.income.stats$hh.with.edu)/c(group.income.stats$total.households)
+
+### add "total" results to the table ####
       
+      group.income.stats[7,1] <- "Total"
+      group.income.stats[7,2:10] <- c( 
+            coef(median_income), # median.income
+            coef(mean_income), # mean.income
+            coef(scf.MIcombine( with( scf.design , svymean( ~edu_savings ) ) ) ), # mean educational savings
+            SE(scf.MIcombine( with( scf.design , svymean( ~edu_savings ) ) ) ),
+            coef(scf.MIcombine( with( scf.design , svytotal( ~edu_savings ) ) ) ), #total educational savings
+            coef(scf.MIcombine( with( scf.design , svytotal( ~five ) ) ) ), #total households
+            coef(scf.MIcombine( with( scf.design , svytotal( ~has.edu ) ) ) ), #households with edu savings
+            0, #share of edu savings, placeholder value
+            0  # percent with edu savings, placeholder value
+      )
+      
+      #calculate share of edu savings (partially a sanity check; should equal 1)
+      group.income.stats[7,"share.of.edu.savings"] <- group.income.stats[7,"total.edu.savings"]/sum(group.income.stats[1:6,"total.edu.savings"])
+      
+      
+      #caluculate total share of households with edu savings.
+      group.income.stats[7,"percent.with.edu.savings"] <- group.income.stats[7,"hh.with.edu"]/group.income.stats[7,"total.households"]
+      
+#### print results to console ####
+      
+      #rename "group" column
+      group.income.stats$group <- c(
+                                    "1st Quintile (0 - 20%)",
+                                    "2nd Quintile (20% - 40%)", 
+                                    "3rd Quintile (40% - 60%)",
+                                    "4th Quintile (60% - 80%)",
+                                    "9th Decile (80% - 90%)",
+                                    "10th Decile (90% - 100%)",
+                                    "Total"
+      )
+      
+      #Round long numbers
+      group.income.stats[,2:8] <- round(group.income.stats[,2:8], 0)
+      group.income.stats[,9:10] <- round(group.income.stats[,9:10], 3)
+      
+      #print to console
+      group.income.stats
+      
+      #write to CSV
+      write.csv(group.income.stats,file = "SCFCollegeSavingsResults.csv")
       
